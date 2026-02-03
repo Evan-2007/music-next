@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { useQueueStore } from '@/lib/queue';
-import { song as Song, AlbumData, Playlist } from '@/lib/sources/types';
+import { Song, AlbumData, Playlist } from '@/lib/sources/types';
 
 import {
   Dialog,

@@ -3,18 +3,18 @@ import { Tidal } from './tidal/tidal';
 import { Navidrome } from './navidrome/navidrome';
 import {
   Lyrics,
-  song as Song,
+  Song,
   sources,
-  artists as Artist,
-  albums as Album,
-  searchResult as SearchResult,
+  ArtistSummary as Artist,
+  AlbumSummary as Album,
+  SearchResult,
   AlbumData,
-  Playlists,
+  PlaylistSummary,
   Playlist,
+  ArtistData,
 } from './types';
 import { getLRCLIBLyrics } from './lrc-lib/lrc-lib';
 import { MusicKit } from './musicKit/musicKit';
-import { ArtistResponse } from '@/types/artistResponse';
 
 type PlaybackStatus = 'playing' | 'paused' | 'ended';
 type TimeUpdateListener = (position: number, duration: number) => void;
@@ -352,9 +352,9 @@ export class SourceManager {
     return sourceInstance.getAlbumData(albumId, source);
   }
 
-  public async getPlaylists(): Promise<Playlists[]> {
+  public async getPlaylists(): Promise<PlaylistSummary[]> {
     await this.initializationPromise;
-    let playlists: Playlists[] = [];
+    let playlists: PlaylistSummary[] = [];
     for (const [sourceId, source] of this.sources) {
       try {
         const sourcePlaylists = await source.getPlaylists();
@@ -545,13 +545,13 @@ export class SourceManager {
    *
    * @param artistId - The unique identifier of the artist to retrieve.
    * @param source - The name of the source from which to fetch the artist data.
-   * @returns A promise that resolves to an {@link ArtistResponse} containing the artist's information.
+   * @returns A promise that resolves to an {@link ArtistData} containing the artist's information.
    * @throws Will reject the promise if the specified source is not found.
    */
   public async getArtistById(
     artistId: string,
     source: string
-  ): Promise<ArtistResponse> {
+  ): Promise<ArtistData> {
     await this.initializationPromise;
     const sourceInstance = this.sources.get(source);
     if (!sourceInstance) {

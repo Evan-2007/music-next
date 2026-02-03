@@ -1,12 +1,12 @@
 import { SourceInterface } from '@/lib/sources/source-interface';
 import {
-  song,
+  Song,
   Lyrics,
-  searchResult,
+  SearchResult,
   Playlist,
-  Playlists,
+  PlaylistSummary,
+  ArtistData,
 } from '@/lib/sources/types';
-import { ArtistResponse } from '@/types/artistResponse';
 
 export class musicKit implements SourceInterface {
   async play(): Promise<void> {
@@ -39,44 +39,33 @@ export class musicKit implements SourceInterface {
   setVolume(): void {
     throw new Error('Method not implemented.');
   }
-  getSongData(): Promise<song> {
+  getSongData(): Promise<Song> {
     throw new Error('Method not implemented.');
   }
   async getAlbumData(
     albumId: string,
     source: string
   ): Promise<import('../../types').AlbumData> {
-    // Placeholder implementation
     return {
       id: albumId,
       source: source,
       releaseDate: '',
-      artWork: {
-        url: '',
-        width: 0,
-        height: 0,
-        textColor1: '',
-        textColor2: '',
-        textColor3: '',
-        textColor4: '',
-        bgColor: '',
-        hasP3: false,
-      },
+      artWork: { url: '' },
       name: 'Album Name',
       artist: 'Album Artist',
       isSingle: false,
     };
   }
-  async getPlaylists(): Promise<Playlists[]> {
+  async getPlaylists(): Promise<PlaylistSummary[]> {
     throw new Error('Method not implemented.');
   }
   async getPlaylistById(playlistId: string): Promise<Playlist> {
     throw new Error('Method not implemented.');
   }
-  async getArtistById(artistId: string): Promise<ArtistResponse> {
+  async getArtistById(artistId: string): Promise<ArtistData> {
     throw new Error('Method not implemented.');
   }
-  async search(query: string): Promise<searchResult> {
+  async search(query: string): Promise<SearchResult> {
     throw new Error('Method not implemented.');
   }
 

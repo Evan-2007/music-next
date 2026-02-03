@@ -6,13 +6,13 @@ import { musicKit as AndroidMusicKit } from './android/musicKit';
 import { musicKit as WebMusicKit } from './web/musicKit';
 import {
   Lyrics,
-  song,
-  searchResult,
+  Song,
+  SearchResult,
   AlbumData,
   Playlist,
-  Playlists,
+  PlaylistSummary,
+  ArtistData,
 } from '../types';
-import { ArtistResponse } from '@/types/artistResponse';
 
 type PlatformType =
   | 'windows'
@@ -89,22 +89,22 @@ export class MusicKit implements SourceInterface {
   setVolume(volume: number): void {
     this.platform.setVolume(volume);
   }
-  getSongData(songId: string): Promise<song> {
+  getSongData(songId: string): Promise<Song> {
     return this.platform.getSongData(songId);
   }
   async getAlbumData(albumId: string, source: string): Promise<AlbumData> {
     return await this.platform.getAlbumData(albumId, source);
   }
-  async getPlaylists(): Promise<Playlists[]> {
+  async getPlaylists(): Promise<PlaylistSummary[]> {
     return await this.platform.getPlaylists();
   }
   async getPlaylistById(playlistId: string): Promise<Playlist> {
     return await this.platform.getPlaylistById(playlistId);
   }
-  async getArtistById(artistId: string): Promise<ArtistResponse> {
+  async getArtistById(artistId: string): Promise<ArtistData> {
     return await this.platform.getArtistById(artistId);
   }
-  async search(query: string): Promise<searchResult> {
+  async search(query: string): Promise<SearchResult> {
     console.log('searching');
     return await this.platform.search(query);
   }

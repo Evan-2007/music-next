@@ -1,23 +1,23 @@
 import { create } from 'zustand';
 import { subsonicURL } from '@/lib/sources/navidrome';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { song } from '@/lib/sources/types';
+import { Song } from '@/lib/sources/types';
 
 export interface queueStore {
   queue: queue;
-  addToQueue: (track: song | string) => void;
-  currentSong?: { track: song; index: number };
+  addToQueue: (track: Song | string) => void;
+  currentSong?: { track: Song; index: number };
   removeFromQueue: (index: number) => void;
   clearQueue: () => void;
-  playNext: (track: song | string) => void;
+  playNext: (track: Song | string) => void;
   setCurrentSong: (index: number) => void;
   setRepeat: (repeat: number) => void;
   playPrevious: () => void;
   skip: () => void;
   toggleShuffle: () => void;
-  setQueue: (songs: song[], shuffle: boolean, clearQueue: boolean) => void;
-  play: (song: song | string) => void;
-  playAlbum: (album: song[], action: 'clear' | 'preserve') => void;
+  setQueue: (songs: Song[], shuffle: boolean, clearQueue: boolean) => void;
+  play: (song: Song | string) => void;
+  playAlbum: (album: Song[], action: 'clear' | 'preserve') => void;
   setPlaying: (playing: 'playing' | 'paused' | 'ended') => void;
 }
 
@@ -25,9 +25,9 @@ interface queue {
   repeat: number;
   shuffle: boolean;
   playing: 'playing' | 'paused' | 'ended';
-  currentSong: { track: song; index: number };
-  songs: song[];
-  unShuffledSongs: song[];
+  currentSong: { track: Song; index: number };
+  songs: Song[];
+  unShuffledSongs: Song[];
 }
 
 export const useQueueStore = create<queueStore>()(
@@ -48,7 +48,6 @@ export const useQueueStore = create<queueStore>()(
             artist: '',
             album: '',
             duration: 0,
-            quality: '',
             source: '',
             availableSources: [],
             imageUrl: '',
@@ -375,7 +374,7 @@ export const useQueueStore = create<queueStore>()(
   )
 );
 
-const getSongData = async (id: string): Promise<song | undefined> => {
+const getSongData = async (id: string): Promise<Song | undefined> => {
   const baseUrl = await subsonicURL('/rest/getSong', '&id=' + id);
   try {
     const res = await fetch(baseUrl);

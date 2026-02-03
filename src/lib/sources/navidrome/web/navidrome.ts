@@ -2,11 +2,10 @@ import { SourceInterface } from '@/lib/sources/source-interface';
 //import {getSongData} from './getSong'
 import { subsonicBaseUrl } from './subsonic';
 import { AudioPlayer } from './audioPlayer';
-import { Lyrics, Playlist, Playlists } from '../../types';
+import { Lyrics, Playlist, PlaylistSummary, ArtistData } from '../../types';
 import { getLyrics } from './getLyrics';
-import { song } from '../../types';
-import { searchResult } from '../../types';
-import { ArtistResponse } from '@/types/artistResponse';
+import { Song } from '../../types';
+import { SearchResult } from '../../types';
 
 export class WebNavidrome implements SourceInterface {
   private audioPlayer: AudioPlayer;
@@ -103,14 +102,13 @@ export class WebNavidrome implements SourceInterface {
     this.audioPlayer.setVolume(volume);
   }
 
-  async getSongData(trackId: string): Promise<song> {
+  async getSongData(trackId: string): Promise<Song> {
     return {
       id: trackId,
       title: 'Title',
       artist: 'Artist',
       album: 'Album',
       duration: 0,
-      quality: 'quality',
       source: 'navidrome',
       availableSources: [],
       imageUrl: '',
@@ -122,33 +120,22 @@ export class WebNavidrome implements SourceInterface {
     albumId: string,
     source: string
   ): Promise<import('../../types').AlbumData> {
-    // Placeholder implementation
     return {
       id: albumId,
       source: source,
       releaseDate: '',
-      artWork: {
-        url: '',
-        width: 0,
-        height: 0,
-        textColor1: '',
-        textColor2: '',
-        textColor3: '',
-        textColor4: '',
-        bgColor: '',
-        hasP3: false,
-      },
+      artWork: { url: '' },
       name: 'Album Name',
       artist: 'Album Artist',
       isSingle: false,
     };
   }
 
-  async getArtistById(artistId: string): Promise<ArtistResponse> {
+  async getArtistById(artistId: string): Promise<ArtistData> {
     throw new Error('Method not implemented.');
   }
 
-  async getPlaylists(): Promise<Playlists[]> {
+  async getPlaylists(): Promise<PlaylistSummary[]> {
     return [];
   }
   async getPlaylistById(playlistId: string): Promise<Playlist> {
@@ -163,7 +150,7 @@ export class WebNavidrome implements SourceInterface {
     }
   }
 
-  async search(query: string): Promise<searchResult> {
+  async search(query: string): Promise<SearchResult> {
     const url = await subsonicBaseUrl('/rest/search3', `&query=${query}`);
 
     const response = await fetch(url);
@@ -177,7 +164,6 @@ export class WebNavidrome implements SourceInterface {
         artist: song.artist,
         album: song.album,
         duration: song.duration,
-        quality: 'N/A',
         source: 'navidrome',
         availableSources: ['navidrome'],
         imageUrl: await subsonicBaseUrl(

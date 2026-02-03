@@ -13,18 +13,18 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { song } from '@/lib/sources/types';
+import { Song } from '@/lib/sources/types';
 
 import { Ellipsis } from 'lucide-react';
 import { useQueueStore } from '@/lib/queue';
 import { subsonicURL } from '@/lib/sources/navidrome';
 import { useEffect, useState } from 'react';
 
-export function SongDropdown({ song }: { song: song }) {
+export function SongDropdown({ song }: { song: Song }) {
   const queue = useQueueStore((state) => state);
   const addToQueue = useQueueStore((state) => state.addToQueue);
   const playNext = useQueueStore((state) => state.playNext);
-  const [songData, setSongData] = useState<song | null>(null);
+  const [songData, setSongData] = useState<Song | null>(null);
 
   useEffect(() => {}, []);
 

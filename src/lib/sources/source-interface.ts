@@ -1,12 +1,12 @@
 import {
   Lyrics,
-  song,
-  searchResult,
+  Song,
+  SearchResult,
   AlbumData,
-  Playlists,
+  PlaylistSummary,
   Playlist,
+  ArtistData,
 } from './types';
-import { ArtistResponse } from '@/types/artistResponse';
 
 export interface SourceInterface {
   play(): Promise<void>;
@@ -21,11 +21,11 @@ export interface SourceInterface {
   ): void;
   seek(time: number): Promise<void>;
   setVolume(volume: number): void;
-  getSongData(trackId: string): Promise<song>;
-  search(query: string): Promise<searchResult>;
+  getSongData(trackId: string): Promise<Song>;
+  search(query: string): Promise<SearchResult>;
   setRepeat(repeat: boolean): Promise<void>;
   getAlbumData(albumId: string, source: string): Promise<AlbumData>;
-  getPlaylists(): Promise<Playlists[]>;
+  getPlaylists(): Promise<PlaylistSummary[]>;
   getPlaylistById(playlistId: string): Promise<Playlist>;
-  getArtistById(artistId: string): Promise<ArtistResponse>;
+  getArtistById(artistId: string): Promise<ArtistData>;
 }

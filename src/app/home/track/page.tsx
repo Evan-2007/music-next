@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { useQueueStore } from '@/lib/queue';
 import { SourceManager } from '@/lib/sources/source-manager';
-import { song as Song, albums as Album } from '@/lib/sources/types';
+import { Song } from '@/lib/sources/types';
 import NavidromeIcon from '@/assets/navidrome_dark.svg';
 import { GetListByKeyword, VideoItem } from '@/lib/youtubeSearch';
 import { Header } from '@/components/song-display/header';

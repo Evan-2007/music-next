@@ -13,9 +13,9 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useQueueStore } from '@/lib/queue';
 import { subsonicURL } from '@/lib/sources/navidrome';
-import { SourceManager } from '@/lib/sources/source-manager';
+import { useSourceManager } from '@/lib/hooks';
 import { debounce } from 'lodash';
-import { searchResult } from '@/lib/sources/types';
+import { SearchResult } from '@/lib/sources/types';
 import AMIcon from '@/assets/apple-music_dark.svg';
 import NavidromeIcon from '@/assets/navidrome_dark.svg';
 
@@ -71,10 +71,10 @@ function RightMenu() {
 }
 
 function Search() {
-  const sourceManager = SourceManager.getInstance();
+  const sourceManager = useSourceManager();
   const queue = useQueueStore((state) => state);
 
-  const [results, setResults] = useState<searchResult | null>(null);
+  const [results, setResults] = useState<SearchResult | null>(null);
 
   const [credentials, setCredentials] = useState<{
     username: string | null;

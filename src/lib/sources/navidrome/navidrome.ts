@@ -3,8 +3,7 @@ import { SourceInterface } from '../source-interface';
 import { platform } from '@tauri-apps/plugin-os';
 import { WebNavidrome } from './web/navidrome';
 import { Lyrics } from '../types';
-import { song, searchResult, AlbumData, Playlist, Playlists } from '../types';
-import { Artist, ArtistResponse } from '@/types/artistResponse';
+import { Song, SearchResult, AlbumData, Playlist, PlaylistSummary, ArtistData } from '../types';
 
 type PlatformType =
   | 'windows'
@@ -86,22 +85,22 @@ export class Navidrome implements SourceInterface {
     this.platform.setVolume(volume);
   }
 
-  async getSongData(trackId: string): Promise<song> {
+  async getSongData(trackId: string): Promise<Song> {
     return await this.platform.getSongData(trackId);
   }
   async getAlbumData(albumId: string, source: string): Promise<AlbumData> {
     return await this.platform.getAlbumData(albumId, source);
   }
-  async getPlaylists(): Promise<Playlists[]> {
+  async getPlaylists(): Promise<PlaylistSummary[]> {
     return await this.platform.getPlaylists();
   }
   async getPlaylistById(playlistId: string): Promise<Playlist> {
     return await this.platform.getPlaylistById(playlistId);
   }
-  async getArtistById(artistId: string): Promise<ArtistResponse> {
+  async getArtistById(artistId: string): Promise<ArtistData> {
     throw new Error('Method not implemented.');
   }
-  async search(query: string): Promise<searchResult> {
+  async search(query: string): Promise<SearchResult> {
     return await this.platform.search(query);
   }
   async setRepeat(repeat: boolean): Promise<void> {

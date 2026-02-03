@@ -8,7 +8,6 @@ export interface NormalLyrics {
   }[];
   source: string;
   type?: 'synced' | 'unsynced' | 'instrumental';
-  error?: string;
 }
 
 export interface ErrorLyrics {
@@ -18,13 +17,14 @@ export interface ErrorLyrics {
 
 export type Lyrics = ErrorLyrics | NormalLyrics;
 
-export interface song {
+export interface Song {
   id: string;
   title: string;
   artist: string;
   album: string;
+  albumId?: string;
   duration: number;
-  quality: string;
+  quality?: string;
   source: string;
   availableSources: string[];
   imageUrl: string;
@@ -53,8 +53,7 @@ export type ArtWork =
 export interface AlbumData {
   id: string;
   source: string;
-  attributes?: string[];
-  gnres?: string[];
+  genres?: string[];
   artWork: ArtWork;
   isSingle?: boolean;
   name: string;
@@ -62,16 +61,16 @@ export interface AlbumData {
   artistId?: string;
   releaseDate: string;
   contentRating?: string;
-  isCompleat?: boolean;
+  isComplete?: boolean;
   editorialNotes?: {
     tagLine?: string;
     short?: string;
     standard?: string;
   };
-  tracks?: song[];
+  tracks?: Song[];
 }
 
-export interface albums {
+export interface AlbumSummary {
   id: string;
   title: string;
   artist: string;
@@ -82,7 +81,7 @@ export interface albums {
   totalTracks: number;
 }
 
-export interface artists {
+export interface ArtistSummary {
   id: string;
   name: string;
   imageUrl: string;
@@ -90,10 +89,10 @@ export interface artists {
   availableSources: string[];
 }
 
-export interface searchResult {
-  songs: song[];
-  albums: albums[];
-  artists: artists[];
+export interface SearchResult {
+  songs: Song[];
+  albums: AlbumSummary[];
+  artists: ArtistSummary[];
 }
 
 export interface sources {
@@ -112,7 +111,7 @@ export interface sources {
   };
 }
 
-export interface Playlists {
+export interface PlaylistSummary {
   id: string;
   source: string;
   lastModified: string;
@@ -125,10 +124,23 @@ export interface Playlists {
   imageUrl?: string;
 }
 
-export interface PlaylistSong extends song {
-  trackNumber: number;
+export interface Playlist extends PlaylistSummary {
+  tracks: Song[];
 }
 
-export interface Playlist extends Playlists {
-  tracks: song[];
+export interface ArtistData {
+  id: string;
+  source: string;
+  name: string;
+  imageUrl: string;
+  bio?: string;
+  genres?: string[];
+  albums?: AlbumSummary[];
+  songs?: Song[];
+  artwork?: ArtWork;
+  editorialVideo?: {
+    fullscreen?: string; // HLS video URL
+    square?: string;
+    wide?: string;
+  };
 }

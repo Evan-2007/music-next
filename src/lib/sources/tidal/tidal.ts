@@ -4,10 +4,9 @@ import { platform } from '@tauri-apps/plugin-os';
 import { tidal as IosTidal } from './ios/tidal';
 import { tidal as AndroidTidal } from './android/tidal';
 import { tidal as WebTidal } from './web/tidal';
-import { Lyrics, song, AlbumData } from '../types';
-import { searchResult } from '../types';
-import { Playlist, Playlists } from '../types';
-import { ArtistResponse } from '@/types/artistResponse';
+import { Lyrics, Song, AlbumData } from '../types';
+import { SearchResult } from '../types';
+import { Playlist, PlaylistSummary, ArtistData } from '../types';
 
 type PlatformType =
   | 'windows'
@@ -83,25 +82,25 @@ export class Tidal implements SourceInterface {
   setVolume(volume: number): void {
     this.platform.setVolume(volume);
   }
-  getSongData(songId: string): Promise<song> {
+  getSongData(songId: string): Promise<Song> {
     return this.platform.getSongData(songId);
   }
 
   async getAlbumData(albumId: string, source: string): Promise<AlbumData> {
     return this.platform.getAlbumData(albumId, source);
   }
-  async getPlaylists(): Promise<Playlists[]> {
+  async getPlaylists(): Promise<PlaylistSummary[]> {
     throw new Error('Method not implemented.');
   }
   async getPlaylistById(playlistId: string): Promise<Playlist> {
     throw new Error('Method not implemented.');
   }
 
-  async getArtistById(artistId: string): Promise<ArtistResponse> {
+  async getArtistById(artistId: string): Promise<ArtistData> {
     throw new Error('Method not implemented.');
   }
 
-  async search(query: string): Promise<searchResult> {
+  async search(query: string): Promise<SearchResult> {
     throw new Error('Method not implemented.');
   }
   async setRepeat(repeat: boolean): Promise<void> {

@@ -1,5 +1,4 @@
-import { Song } from '../types';
-import { song } from '@/lib/sources/types';
+import { Song } from '@/lib/sources/types';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { CrossPlatformStorage } from '@/lib/storage/cross-platform-storage';
 import { debounce, set } from 'lodash';
@@ -313,7 +312,7 @@ function QueueList({ isMouseMoving }: { isMouseMoving: boolean }) {
   );
 }
 
-function DropdownComponent({ index, song }: { index: number; song: song }) {
+function DropdownComponent({ index, song }: { index: number; song: Song }) {
   const removeFromQueue = useQueueStore((state) => state.removeFromQueue);
 
   const handleRemove = (index: number) => {

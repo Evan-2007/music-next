@@ -1,109 +1,86 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shuffle, Repeat, Repeat1 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
-import { SourceManager } from '@/lib/sources/source-manager';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { song } from '@/lib/sources/types';
+import { Song } from '@/lib/sources/types';
 import { cn } from '@/lib/utils';
-import { useQueueStore } from '@/lib/queue';
-import { usePlayerStore } from '@/lib/state';
+import {
+  useSourceTimeUpdate,
+  useSourcePlayPause,
+  useSourceControls,
+  useCurrentSong,
+  useQueueActions,
+} from '@/lib/hooks';
 
 interface ControlsProps {
-  songData: song;
+  songData: Song;
   className?: string;
 }
 
 const Controls: React.FC<ControlsProps> = ({ className }) => {
-  const playing = useQueueStore((state) => state.queue.playing);
-  const setPlaying = useQueueStore((state) => state.setPlaying);
+  const { playing, repeat, shuffle, songData } = useCurrentSong();
+  const { skip, playPrevious: previous, setPlaying, setRepeat, toggleShuffle } = useQueueActions();
+  const { position, duration } = useSourceTimeUpdate();
+  const sourcePlayState = useSourcePlayPause();
+  const { play, pause, seek, setRepeat: setSourceRepeat, formatTime } = useSourceControls();
 
-  const [currentTime, setCurrentTime] = useState<number>(0);
   const [sliderValue, setSliderValue] = useState<number>(0);
   const [sliderActive, setSliderActive] = useState<boolean>(false);
-  const [length, setLength] = useState<number>(0);
 
-  const sourceManager = SourceManager.getInstance();
-  const skip = useQueueStore((state) => state.skip);
-  const previous = useQueueStore((state) => state.playPrevious);
-  const songData = useQueueStore((state) => state.currentSong?.track);
-  const repeat = useQueueStore((state) => state.queue.repeat);
-  const setRepeat = useQueueStore((state) => state.setRepeat);
-  const toggleShuffle = useQueueStore((state) => state.toggleShuffle);
-  const shuffle = useQueueStore((state) => state.queue.shuffle);
+  const timeLeft = duration - position;
+  const timeLeftString = `-${formatTime(timeLeft)}`;
+  const sliderTimestamp = formatTime((duration * sliderValue) / 1000);
 
-  const timeLeft = length - currentTime;
-  const timeLeftString = `-${sourceManager.formatTime(timeLeft)}`;
-  const sliderTimestamp = sourceManager.formatTime(
-    (length * sliderValue) / 1000
-  );
-
+  // Sync slider with position when not actively sliding
   useEffect(() => {
-    const cleanup = sourceManager.onTimeUpdate((position, duration) => {
-      //      console.log(position, duration);
-      setCurrentTime(position);
-      setLength(duration);
+    if (!sliderActive && duration > 0) {
+      setSliderValue((position / duration) * 1000);
+    }
+  }, [position, duration, sliderActive]);
 
-      if (!sliderActive) {
-        setSliderValue((position / duration) * 1000);
-      }
-    });
-
-    return cleanup;
-  }, []);
-
-  // Subscribe to play/pause updates
+  // Sync play state from source to store
   useEffect(() => {
-    const cleanup = sourceManager.onPlayPause((playing) => {
-      console.log(playing);
-      setPlaying(playing);
-    });
-
-    return cleanup;
-  }, []);
+    setPlaying(sourcePlayState);
+  }, [sourcePlayState, setPlaying]);
 
   const handleRepeat = async () => {
     if (repeat === 0) {
       setRepeat(1);
-      sourceManager.setRepeat(false);
+      setSourceRepeat(false);
     } else if (repeat === 1) {
       setRepeat(2);
-      //toggle repeat in sourceManager
-      sourceManager.setRepeat(true);
+      setSourceRepeat(true);
     } else {
       setRepeat(0);
-      sourceManager.setRepeat(false);
+      setSourceRepeat(false);
     }
   };
 
-  // Handle play/pause
   const handlePlayPause = async () => {
-    console.log(playing);
     if (playing === 'playing') {
-      await sourceManager.pause();
+      await pause();
       setPlaying('paused');
     } else {
-      await sourceManager.play();
+      await play();
       setPlaying('playing');
     }
   };
 
-  // Handle seek
   const handleSliderCommit = async (value: number) => {
-    const time = (length * value) / 1000;
+    const time = (duration * value) / 1000;
     setSliderActive(false);
     setSliderValue(value);
-    await sourceManager.seek(time);
+    await seek(time);
   };
 
-  // Handle previous
   const handlePrevious = async () => {
-    if (currentTime > 5) {
-      await sourceManager.seek(0);
+    if (position > 5) {
+      await seek(0);
     } else {
       previous();
     }
@@ -142,7 +119,7 @@ const Controls: React.FC<ControlsProps> = ({ className }) => {
       </div>
       <div className='mb-4 flex flex-row items-center justify-center'>
         <div className='w-9 text-left'>
-          <p>{sourceManager.formatTime(currentTime)}</p>
+          <p>{formatTime(position)}</p>
         </div>
         <TooltipProvider delayDuration={300}>
           <Tooltip>

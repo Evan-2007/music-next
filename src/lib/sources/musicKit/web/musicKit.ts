@@ -1,12 +1,13 @@
 import { SourceInterface } from '@/lib/sources/source-interface';
 import {
-  song,
+  Song,
   Lyrics,
-  searchResult as SearchResult,
-  albums as Album,
+  SearchResult,
+  AlbumSummary,
   AlbumData,
   Playlist,
-  Playlists,
+  PlaylistSummary,
+  ArtistData,
 } from '@/lib/sources/types';
 import { jwtDecode } from 'jwt-decode';
 import { last } from 'lodash';
@@ -186,7 +187,7 @@ export class musicKit implements SourceInterface {
 
     this.musicKitInstance.volume = volume;
   }
-  getSongData(): Promise<song> {
+  getSongData(): Promise<Song> {
     throw new Error('Method not implemented.');
   }
 
@@ -202,17 +203,7 @@ export class musicKit implements SourceInterface {
         id: albumId,
         source: source,
         releaseDate: '',
-        artWork: {
-          url: '',
-          width: 0,
-          height: 0,
-          textColor1: '',
-          textColor2: '',
-          textColor3: '',
-          textColor4: '',
-          bgColor: '',
-          hasP3: false,
-        },
+        artWork: { url: '' },
         name: 'Album Name',
         artist: 'Album Artist',
         isSingle: false,
@@ -221,7 +212,7 @@ export class musicKit implements SourceInterface {
     const albumData = await result.data.data[0];
     console.log('Album data fetched from MusicKit:', albumData);
 
-    let formatedTracks: song[] = [];
+    let formatedTracks: Song[] = [];
 
     if (albumData.relationships && albumData.relationships.tracks) {
       formatedTracks = albumData.relationships.tracks.data.map(
@@ -264,13 +255,12 @@ export class musicKit implements SourceInterface {
       artist: albumData.attributes.artistName || 'Album Artist',
       isSingle: albumData.attributes.isSingle || false,
       editorialNotes: albumData.attributes.editorialNotes,
-      attributes: [],
-      gnres: albumData.attributes.genreNames || [],
+      genres: albumData.attributes.genreNames || [],
       tracks: formatedTracks,
     };
   }
 
-  async getPlaylists(): Promise<Playlists[]> {
+  async getPlaylists(): Promise<PlaylistSummary[]> {
     await this.initializationPromise;
     if (!this.musicKitInstance) {
       console.error('MusicKit not initialized');
@@ -290,7 +280,7 @@ export class musicKit implements SourceInterface {
         ? playlist.attributes.artwork.url.replace('{w}x{h}', '900x900')
         : undefined,
       source: 'musicKit',
-      lastUpdated: playlist.attributes.lastModifiedDate,
+      lastModified: playlist.attributes.lastModifiedDate,
       canEdit: playlist.attributes.canEdit,
       isPublic: playlist.attributes.isPublic,
       isLibrary: playlist.attributes.playParams.isLibrary,
@@ -346,22 +336,22 @@ export class musicKit implements SourceInterface {
     };
   }
 
-  async getArtistById(artistId: string): Promise<ArtistResponse> {
+  async getArtistById(artistId: string): Promise<ArtistData> {
     await this.initializationPromise;
     if (!this.musicKitInstance) {
       console.error('MusicKit not initialized');
       return Promise.reject('MusicKit not initialized');
     }
+
     if (!window.isTauri) {
+      // Standard Apple Music API (appleMusic1)
       const artist = await this.musicKitInstance.api.music(
         `/v1/catalog/{{storefrontId}}/artists/${artistId}?include=albums,songs,genres,music-videos`
       );
-
-      return {
-        data: artist.data.data[0],
-        type: 'appleMusic1',
-      };
+      const data = artist.data.data[0];
+      return this.normalizeAppleMusic1(data);
     } else {
+      // Extended Apple Music API via Tauri (appleMusic2)
       const MediaUserToken = localStorage.getItem(
         'music.q222xnn59b.media-user-token'
       );
@@ -380,13 +370,172 @@ export class musicKit implements SourceInterface {
         },
       });
 
-      const data = await response.json();
-      console.log(data);
-      return {
-        data: data,
+      const apiData: ArtistResponse = {
+        data: await response.json(),
         type: 'appleMusic2',
       };
+      return this.normalizeAppleMusic2(apiData.data, artistId);
     }
+  }
+
+  private normalizeAppleMusic1(data: any): ArtistData {
+    const attrs = data.attributes;
+    const artworkUrl = attrs?.artwork?.url
+      ?.replace('{w}', '500')
+      .replace('{h}', '500')
+      .replace('{c}', 'cc')
+      .replace('{f}', 'webp') || '';
+
+    const albums: AlbumSummary[] = (data.relationships?.albums?.data || []).map(
+      (album: any) => ({
+        id: album.id,
+        title: album.attributes?.name || '',
+        artist: album.attributes?.artistName || '',
+        imageUrl: album.attributes?.artwork?.url
+          ?.replace('{w}', '500')
+          .replace('{h}', '500')
+          .replace('{c}', 'cc')
+          .replace('{f}', 'webp') || '',
+        releaseDate: album.attributes?.releaseDate || '',
+        source: 'musicKit',
+        availableSources: ['musicKit'],
+        totalTracks: album.attributes?.trackCount || 0,
+      })
+    );
+
+    const songs: Song[] = (data.relationships?.songs?.data || []).map(
+      (song: any) => ({
+        id: song.id,
+        title: song.attributes?.name || '',
+        artist: song.attributes?.artistName || '',
+        album: song.attributes?.albumName || '',
+        albumId: song.relationships?.albums?.data?.[0]?.id,
+        duration: song.attributes?.durationInMillis || 0,
+        source: 'musicKit',
+        availableSources: ['musicKit'],
+        imageUrl: song.attributes?.artwork?.url
+          ?.replace('{w}', '500')
+          .replace('{h}', '500')
+          .replace('{c}', 'cc')
+          .replace('{f}', 'webp') || '',
+        releaseDate: song.attributes?.releaseDate || '',
+      })
+    );
+
+    return {
+      id: data.id,
+      source: 'musicKit',
+      name: attrs?.name || '',
+      imageUrl: artworkUrl,
+      genres: attrs?.genreNames,
+      albums: albums.sort(
+        (a, b) =>
+          new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime()
+      ),
+      songs,
+      artwork: attrs?.artwork
+        ? {
+            type: 'apple' as const,
+            url: artworkUrl,
+            width: attrs.artwork.width || 0,
+            height: attrs.artwork.height || 0,
+            textColor1: attrs.artwork.textColor1 || '',
+            textColor2: attrs.artwork.textColor2 || '',
+            textColor3: attrs.artwork.textColor3 || '',
+            textColor4: attrs.artwork.textColor4 || '',
+            bgColor: attrs.artwork.bgColor || '',
+            hasP3: attrs.artwork.hasP3 || false,
+          }
+        : undefined,
+    };
+  }
+
+  private normalizeAppleMusic2(data: any, artistId: string): ArtistData {
+    const artist = data?.resources?.artists?.[artistId];
+    const attrs = artist?.attributes;
+    const artworkUrl = attrs?.artwork?.url
+      ?.replace('{w}', '500')
+      .replace('{h}', '500')
+      .replace('{c}', 'cc')
+      .replace('{f}', 'webp') || '';
+
+    const albumsObj = data?.resources?.albums || {};
+    const albums: AlbumSummary[] = Object.values(albumsObj).map(
+      (album: any) => ({
+        id: album.id,
+        title: album.attributes?.name || '',
+        artist: album.attributes?.artistName || '',
+        imageUrl: album.attributes?.artwork?.url
+          ?.replace('{w}', '500')
+          .replace('{h}', '500')
+          .replace('{c}', 'cc')
+          .replace('{f}', 'webp') || '',
+        releaseDate: album.attributes?.releaseDate
+          ? String(album.attributes.releaseDate)
+          : '',
+        source: 'musicKit',
+        availableSources: ['musicKit'],
+        totalTracks: album.attributes?.trackCount || 0,
+      })
+    );
+
+    const songsObj = data?.resources?.songs || {};
+    const songs: Song[] = Object.values(songsObj).map((song: any) => ({
+      id: song.id,
+      title: song.attributes?.name || '',
+      artist: song.attributes?.artistName || '',
+      album: song.attributes?.albumName || '',
+      albumId: song.relationships?.albums?.data?.[0]?.id,
+      duration: song.attributes?.durationInMillis || 0,
+      source: 'musicKit',
+      availableSources: ['musicKit'],
+      imageUrl: song.attributes?.artwork?.url
+        ?.replace('{w}', '500')
+        .replace('{h}', '500')
+        .replace('{c}', 'cc')
+        .replace('{f}', 'webp') || '',
+      releaseDate: song.attributes?.releaseDate
+        ? String(song.attributes.releaseDate)
+        : '',
+    }));
+
+    const editorialVideo = attrs?.editorialVideo;
+
+    return {
+      id: artistId,
+      source: 'musicKit',
+      name: attrs?.name || '',
+      imageUrl: artworkUrl,
+      bio: attrs?.artistBio,
+      genres: attrs?.genreNames,
+      albums: albums.sort(
+        (a, b) =>
+          new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime()
+      ),
+      songs,
+      artwork: attrs?.artwork
+        ? {
+            type: 'apple' as const,
+            url: artworkUrl,
+            width: attrs.artwork.width || 0,
+            height: attrs.artwork.height || 0,
+            textColor1: attrs.artwork.textColor1 || '',
+            textColor2: attrs.artwork.textColor2 || '',
+            textColor3: attrs.artwork.textColor3 || '',
+            textColor4: attrs.artwork.textColor4 || '',
+            bgColor: attrs.artwork.bgColor || '',
+            hasP3: attrs.artwork.hasP3 || false,
+          }
+        : undefined,
+      editorialVideo: editorialVideo
+        ? {
+            fullscreen:
+              editorialVideo.motionArtistFullscreen16x9?.video ?? undefined,
+            square: editorialVideo.motionArtistSquare1x1?.video ?? undefined,
+            wide: editorialVideo.motionArtistWide16x9?.video ?? undefined,
+          }
+        : undefined,
+    };
   }
 
   async search(query: string): Promise<SearchResult> {
@@ -445,7 +594,7 @@ export class musicKit implements SourceInterface {
         artist: album.attributes.artistName,
         imageUrl: album.attributes.artwork.url.replace('{w}x{h}', '900x900'),
         source: 'musicKit',
-        availableSources: ['musikKit'],
+        availableSources: ['musicKit'],
         releaseDate: album.attributes.releaseDate,
         totalTracks: album.attributes.trackCount,
       }));
@@ -459,7 +608,7 @@ export class musicKit implements SourceInterface {
         name: artist.attributes.name,
         imageUrl: artist.attributes.artwork.url.replace('{w}x{h}', '900x900'),
         source: 'musicKit',
-        availableSources: ['musikKit'],
+        availableSources: ['musicKit'],
       }));
     }
 
@@ -471,7 +620,7 @@ export class musicKit implements SourceInterface {
     );
 
     const filteredAlbums = albums.filter(
-      (album: Album) => album.totalTracks > 1
+      (album: AlbumSummary) => album.totalTracks > 1
     );
     return {
       songs,

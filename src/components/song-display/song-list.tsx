@@ -1,4 +1,4 @@
-import { song as Song } from '@/lib/sources/types';
+import { Song } from '@/lib/sources/types';
 import { Separator } from '@/components/ui/separator';
 
 export function SongList({ songs }: { songs: Song[] }) {

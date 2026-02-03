@@ -1,7 +1,7 @@
 import {
-  song as Song,
-  albums as Album,
-  artists as Artist,
+  Song,
+  AlbumSummary,
+  ArtistSummary,
 } from '@/lib/sources/types';
 import { SourceManager } from '@/lib/sources/source-manager';
 import { useRouter } from 'next/navigation';
@@ -10,8 +10,8 @@ import { useQueueStore } from '@/lib/queue';
 type SongItemProps =
   | { type: 'song'; data: Song }
   | { type: 'playlist'; data: any }
-  | { type: 'album'; data: Album }
-  | { type: 'artist'; data: Artist }
+  | { type: 'album'; data: AlbumSummary }
+  | { type: 'artist'; data: ArtistSummary }
   | { type: 'video'; data: any };
 
 export function SongItem({ data, type }: SongItemProps) {
