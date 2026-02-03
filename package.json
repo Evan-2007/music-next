@@ -26,10 +26,6 @@
     ]
   },
   "dependencies": {
-    "@capacitor/android": "^6.1.2",
-    "@capacitor/core": "^6.1.2",
-    "@capacitor/ios": "^6.1.2",
-    "@capacitor/status-bar": "^6.0.1",
     "@hookform/resolvers": "^3.9.0",
     "@nextui-org/dropdown": "^2.1.31",
     "@radix-ui/react-checkbox": "^1.1.2",
@@ -90,7 +86,6 @@
     "mirror": "https://github.com/castlabs/electron-releases/releases/download/v"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.1.2",
     "@svgr/webpack": "^8.1.0",
     "@tauri-apps/cli": "^2.0.4",
     "@types/lodash": "^4.17.9",
