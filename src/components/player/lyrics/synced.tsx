@@ -1,13 +1,14 @@
 // LyricsDisplay.tsx
 import React, { useEffect, useState } from 'react';
-import { useQueueStore } from '@/lib/queue';
-import { SourceManager } from '@/lib/sources/source-manager';
-import { useRouter } from 'next/router';
+import {
+  useLyrics,
+  useSourceTimeUpdate,
+  useSourceControls,
+  useCurrentSong,
+} from '@/lib/hooks';
+import { NormalLyrics } from '@/lib/sources/types';
 
-export interface LyricLine {
-  start?: number;
-  value: string;
-}
+type LyricLine = NormalLyrics['lines'][number];
 
 interface LyricsDisplayProps {
   isMobile: boolean;
@@ -20,15 +21,17 @@ export function SyncedLyrics({
   containerRef,
   isMouseMoving,
 }: LyricsDisplayProps) {
-  const currentQueue = useQueueStore((state) => state.queue);
-  const sourceManager = SourceManager.getInstance();
+  const { songData, currentSong } = useCurrentSong();
+  const { position } = useSourceTimeUpdate();
+  const { seek, play } = useSourceControls();
 
-  const [lyrics, setLyrics] = useState<LyricLine[] | null>(null);
+  const {
+    lyrics,
+    synced,
+    error,
+  } = useLyrics(currentSong?.track?.id);
+
   const [currentLine, setCurrentLine] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
-  const [synced, setSynced] = useState<boolean>(false);
-
-  const songData = useQueueStore((state) => state.queue.currentSong?.track);
 
   // Update current lyric line based on the song position
   useEffect(() => {
@@ -39,30 +42,19 @@ export function SyncedLyrics({
         currentLineElement.scrollIntoView({ block: 'center' });
       }
     }
-    const handleTimeUpdate = () => {
-      const currentTime = sourceManager.getPosition();
-      if (currentTime && lyrics) {
-        const milliseconds = currentTime * 1000;
-        const currentLineIndex = lyrics.findIndex(
-          //@ts-ignore
-          (line) => line.start > milliseconds
-        );
-        setCurrentLine(currentLineIndex - 1);
-      }
-    };
 
-    const removeEventListener = sourceManager.onTimeUpdate(handleTimeUpdate);
-    return () => {
-      removeEventListener();
-    };
-  }, [lyrics]);
+    if (position && lyrics) {
+      const milliseconds = position * 1000;
+      const currentLineIndex = lyrics.findIndex(
+        (line: LyricLine) => (line.start ?? 0) > milliseconds
+      );
+      setCurrentLine(currentLineIndex - 1);
+    }
+  }, [position, lyrics, synced, containerRef]);
 
-  // Fetch lyrics when the song changes and scroll to top
+  // Reset current line when song changes
   useEffect(() => {
-    setTimeout(() => {
-      fetchLyrics();
-      setCurrentLine(0);
-    }, 300);
+    setCurrentLine(0);
   }, [songData]);
 
   // Scroll effect when the container is available and lyrics are synced
@@ -114,24 +106,6 @@ export function SyncedLyrics({
     }
   }, [currentLine, isMouseMoving, isMobile, containerRef]);
 
-  async function fetchLyrics() {
-    const lyricsResponse = await sourceManager.getLyrics(
-      currentQueue.currentSong.track.id
-    );
-    if ((lyricsResponse as any).error) {
-      console.error('An error occurred:', (lyricsResponse as any).error);
-      setLyrics(null);
-      setError(`An error occurred: ${(lyricsResponse as any).error}`);
-    } else {
-      if ('lines' in lyricsResponse && 'synced' in lyricsResponse) {
-        setLyrics(lyricsResponse.lines);
-        setSynced(lyricsResponse.synced);
-        setError(null);
-      } else {
-      }
-    }
-  }
-
   function handleLyricClick(index: number) {
     const line = lyrics?.[index];
     if (line) {
@@ -139,9 +113,9 @@ export function SyncedLyrics({
         return;
       }
       const seconds = line.start / 1000;
-      sourceManager.seek(seconds);
+      seek(seconds);
       setCurrentLine(index);
-      sourceManager.play();
+      play();
     }
   }
 
@@ -154,7 +128,7 @@ export function SyncedLyrics({
       )}
       {lyrics ? (
         synced ? (
-          lyrics.map((line, index) => (
+          lyrics.map((line: LyricLine, index: number) => (
             <button key={index} onClick={() => handleLyricClick(index)}>
               <p
                 data-line={index}
@@ -183,7 +157,7 @@ export function SyncedLyrics({
           ))
         ) : (
           <div className='mb-[30vh] flex h-full w-full flex-col items-center justify-start'>
-            {lyrics.map((line, index) => (
+            {lyrics.map((line: LyricLine, index: number) => (
               <div key={index}>
                 <p className='mt-6 text-center text-4xl font-bold text-gray-400 drop-shadow-[0_1px_1px_rgba(0,0,0,0.5)]'>
                   {line.value}
