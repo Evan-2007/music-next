@@ -1,10 +1,7 @@
 'use client';
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/song-display/header';
-import { SourceManager } from '@/lib/sources/source-manager';
-import { useEffect, useState } from 'react';
-import { Playlist } from '@/lib/sources/types';
+import { usePlaylistData } from '@/lib/hooks';
 import { SongList } from '@/components/song-display/song-list';
 import { Separator } from '@/components/ui/separator';
 
@@ -12,32 +9,17 @@ export default function Page() {
   return (
     <div className='flex h-full w-full flex-col items-center'>
       <Suspense fallback={<div>Loading...</div>}>
-        <Album />
+        <PlaylistPage />
       </Suspense>
     </div>
   );
 }
 
-function Album() {
-  const sourceManager = SourceManager.getInstance();
+function PlaylistPage() {
+  const { data: playlistData, loading } = usePlaylistData();
 
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id');
-  const source = searchParams.get('source');
-
-  const [playlistData, setPlaylistData] = useState<Playlist | null>(null);
-
-  useEffect(() => {
-    if (id && source) {
-      sourceManager.getPlaylistById(id, source).then((data) => {
-        setPlaylistData(data);
-        console.log('Album data fetched:', data);
-      });
-    }
-  }, [id, source]);
-
-  if (!playlistData) {
-    return <div>Loading album data...</div>;
+  if (loading || !playlistData) {
+    return <div>Loading playlist data...</div>;
   }
 
   return (

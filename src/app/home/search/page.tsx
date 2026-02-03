@@ -1,11 +1,9 @@
 'use client';
-import { SourceManager } from '@/lib/sources/source-manager';
 import { useSearchParams } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
-import { Suspense } from 'react';
-import { searchResult } from '@/lib/sources/types';
+import { useState, Suspense } from 'react';
+import { useSourceSearch } from '@/lib/hooks';
 import { SongItem } from '@/components/song/song-item';
 
 export default function Search() {
@@ -65,22 +63,8 @@ export default function Search() {
 
 function Results({ tab }: { tab: string }) {
   const searchParams = useSearchParams();
-  const sourceManager = SourceManager.getInstance();
-
-  const search = searchParams.get('query');
-  const [loading, setLoading] = useState(true);
-  const [results, setResults] = useState<null | searchResult>(null);
-
-  const getResults = async () => {
-    setLoading(true);
-    const result = await sourceManager.search(search ?? '');
-    setResults(result);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    getResults();
-  }, [search]);
+  const query = searchParams.get('query');
+  const { results, loading } = useSourceSearch(query);
 
   return (
     <div className='flex w-full flex-col items-center'>
