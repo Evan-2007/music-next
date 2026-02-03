@@ -1,10 +1,7 @@
 'use client';
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/song-display/header';
-import { SourceManager } from '@/lib/sources/source-manager';
-import { useEffect, useState } from 'react';
-import { AlbumData } from '@/lib/sources/types';
+import { useAlbumData } from '@/lib/hooks';
 import { SongList } from '@/components/song-display/song-list';
 import { Separator } from '@/components/ui/separator';
 
@@ -19,24 +16,9 @@ export default function Page() {
 }
 
 function Album() {
-  const sourceManager = SourceManager.getInstance();
+  const { data: albumData, loading } = useAlbumData();
 
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id');
-  const source = searchParams.get('source');
-
-  const [albumData, setAlbumData] = useState<AlbumData | null>(null);
-
-  useEffect(() => {
-    if (id && source) {
-      sourceManager.getAlbumData(id, source).then((data) => {
-        setAlbumData(data);
-        console.log('Album data fetched:', data);
-      });
-    }
-  }, [id, source]);
-
-  if (!albumData) {
+  if (loading || !albumData) {
     return <div>Loading album data...</div>;
   }
 
