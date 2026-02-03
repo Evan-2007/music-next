@@ -20,11 +20,9 @@ import { CrossPlatformStorage } from '@/lib/storage/cross-platform-storage';
 import { useQueueStore } from '@/lib/queue';
 import { usePlayerStore, useUiStore } from '@/lib/state';
 import Controls from '@/components/player/controls';
-
-import { SourceManager } from '@/lib/sources/source-manager';
+import { useSourceManager, useSourcePlayPause, useCurrentSong, useQueueActions } from '@/lib/hooks';
 
 const localStorage = new CrossPlatformStorage();
-const sourceManager = SourceManager.getInstance();
 
 function SearchParamsWrapper({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
@@ -42,25 +40,21 @@ export function Player() {
 }
 
 export function PlayerContent() {
+  const sourceManager = useSourceManager();
   const setFullScreen = useUiStore((state) => state.toggleFullScreenPlayer);
   const fullScreen = useUiStore((state) => state.fullScreenPlayer);
-  const songData = useQueueStore((state) => state.queue.currentSong.track);
   const searchParams = useSearchParams();
   const setAudioRef = usePlayerStore((state) => state.setRef);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const currentlyPlaying = useQueueStore((state) => state.currentSong);
-  const repeat = useQueueStore((state) => state.queue.repeat);
-  const songs = useQueueStore((state) => state.queue.songs);
   const router = useRouter();
 
+  const { songData, currentSong: currentlyPlaying, repeat, playing } = useCurrentSong();
+  const { skip, playPrevious, setPlaying } = useQueueActions();
+  const sourcePlayState = useSourcePlayPause();
+  const songs = useQueueStore((state) => state.queue.songs);
+
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
   const [initialLoad, setInitialLoad] = useState<boolean>(true);
-  const setPlaying = useQueueStore((state) => state.setPlaying);
-  const playing = useQueueStore((state) => state.queue.playing);
-  const skip = useQueueStore((state) => state.skip);
-  const playPrevious = useQueueStore((state) => state.playPrevious);
 
   useEffect(() => {
     setTimeout(() => {
@@ -68,11 +62,16 @@ export function PlayerContent() {
     }, 5000);
   }, []);
 
+  // Sync source state to store
+  useEffect(() => {
+    setPlaying(sourcePlayState);
+  }, [sourcePlayState, setPlaying]);
+
   useEffect(() => {
     if (playing === 'ended') {
       skip();
     }
-  }, [playing]);
+  }, [playing, skip]);
 
   const updateSong = async () => {
     await sourceManager.playSong(songData);
@@ -239,10 +238,8 @@ export function PlayerContent() {
 }
 
 function RightControls({ audioRef }: { audioRef: any }) {
-  const [open, setOpen] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(100);
-
-  const sourceManager = SourceManager.getInstance();
+  const sourceManager = useSourceManager();
 
   const onChange = (e: number[]) => {
     const volumeValue = e[0];
