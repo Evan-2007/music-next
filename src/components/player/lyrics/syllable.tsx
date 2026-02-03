@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from 'react';
 import XmlJS from 'xml-js';
+import { useSourceManager, useSourcePlayPause, useCurrentSong } from '@/lib/hooks';
 import { SourceManager } from '@/lib/sources/source-manager';
 import localFont from 'next/font/local';
 
@@ -403,15 +404,15 @@ export function SyllableLyrics({
   lyrics,
 }: LyricsDisplayProps) {
   const currentQueue = useQueueStore((state) => state.queue);
-  const sourceManager = SourceManager.getInstance();
+  const sourceManager = useSourceManager();
 
   const [currentLine, setCurrentLine] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
-  const playing = useQueueStore((state) => state.queue.playing);
+  const playing = useSourcePlayPause(); // Use source state for accurate sync
   const [multipleSinger, setMultipleSinger] = useState<boolean>(false);
 
-  const songData = useQueueStore((state) => state.queue.currentSong?.track);
+  const { songData } = useCurrentSong();
 
   const handleLyricClick = (index: number) => {
     sourceManager.seek(index);
