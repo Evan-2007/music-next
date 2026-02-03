@@ -22,7 +22,11 @@ import {
   Airplay,
   ListMusic,
 } from 'lucide-react';
-import { SourceManager } from '@/lib/sources/source-manager';
+import {
+  useSourceManager,
+  useSourceEvents,
+  useCurrentSong,
+} from '@/lib/hooks';
 
 import { useRef } from 'react';
 interface FinalColor {
@@ -270,22 +274,20 @@ export function TopPlayer({ imageUrl, setTab }: TopPlayerProps) {
   const progressRef = useRef<HTMLDivElement>(null);
   const progressContainerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
-  const isPaused = !usePlayerStore((state) => state.playing);
-  const [time, setTime] = useState<{ position: number; duration: number }>({
-    position: 0,
-    duration: 0,
-  });
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
+  const { position, duration, playing } = useSourceEvents();
+  const { songData } = useCurrentSong();
+  const isPaused = playing !== 'playing';
 
   const updateProgress = useCallback(() => {
     if (!progressRef.current) return;
 
-    if (isNaN(time.duration)) {
+    if (isNaN(duration)) {
       progressRef.current.style.transform = 'scaleX(0)';
       return;
     }
 
-    const progress = time.position / time.duration || 0;
+    const progress = position / duration || 0;
     const boundedProgress = Math.min(Math.max(progress, 0), 1);
 
     progressRef.current.style.transform = `scaleX(${boundedProgress})`;
@@ -295,68 +297,36 @@ export function TopPlayer({ imageUrl, setTab }: TopPlayerProps) {
     if (!isPaused) {
       animationFrameRef.current = requestAnimationFrame(updateProgress);
     }
-  }, [time.duration, time.position, isPaused]);
+  }, [duration, position, isPaused]);
 
   useEffect(() => {
     if (!progressRef.current) return;
 
-    const handleSourceChange = () => {
-      if (progressRef.current) {
-        progressRef.current.style.transform = 'scaleX(0)';
-        progressRef.current.style.borderRadius = '24px 0 0 24px';
-      }
+    if (progressRef.current) {
+      progressRef.current.style.transform = 'scaleX(0)';
+      progressRef.current.style.borderRadius = '24px 0 0 24px';
+    }
 
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-
-      if (!isPaused) {
-        animationFrameRef.current = requestAnimationFrame(updateProgress);
-      }
-    };
-
-    handleSourceChange();
-  }, [updateProgress, isPaused]);
-
-  useEffect(() => {
-    const audio = SourceManager.getInstance();
-
-    const playPause = audio.onPlayPause((playing) => {
-      setIsPlaying(playing === 'playing');
-
-      if (playing === 'playing') {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        animationFrameRef.current = requestAnimationFrame(updateProgress);
-      } else {
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-      }
-    });
-
-    const onTimeUpdate = audio.onTimeUpdate((position, duration) => {
-      setTime({ position, duration });
-      if (!animationFrameRef.current) {
-        updateProgress();
-      }
-    });
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
 
     if (!isPaused) {
       animationFrameRef.current = requestAnimationFrame(updateProgress);
     }
+  }, [updateProgress, isPaused]);
 
+  useEffect(() => {
+    updateProgress();
+  }, [position, duration, updateProgress]);
+
+  useEffect(() => {
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      playPause();
-      onTimeUpdate();
     };
-  }, [updateProgress]);
-
-  const songData = useQueueStore((state) => state.queue.currentSong?.track);
+  }, []);
 
   return (
     <div
