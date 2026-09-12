@@ -7,7 +7,7 @@ export default function MusicKitManual() {
         const input = form.elements[0] as HTMLInputElement;
         const token = input.value;
         if (typeof window !== 'undefined' && (window as any).MusicKit) {
-            Cookies.set('music.q222xnn59b.media-user-token', token)
+            document.cookie = `music.q222xnn59b.media-user-token=${encodeURIComponent(token)}; path=/`;
             localStorage.setItem('music.q222xnn59b.media-user-token', token);
             console.log('Music User Token set:', token);
             alert('Music User Token set successfully!');
